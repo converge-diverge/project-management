@@ -1,6 +1,8 @@
 import koa from 'koa';
+import auth from 'koa-basic-auth';
 import bodyparser from 'koa-bodyparser';
 import handlebars from 'koa-handlebars';
+import mount from 'koa-mount';
 import route from 'koa-route';
 
 import _ from 'lodash';
@@ -36,12 +38,28 @@ function start(port, database, data) {
     updateConsent
   };
 
+  server.use(function *(next){
+    try {
+      yield next;
+    } catch (err) {
+      if (401 == err.status) {
+        this.status = 401;
+        this.set('WWW-Authenticate', 'Basic');
+        this.body = 'Unauthorized';
+      } else {
+        throw err;
+      }
+    }
+  });
+
   server.use(bodyparser());
   server.use(handlebars({cache: false}));
 
-  server.use(route.get('/consent/status', routes.consentStatus));
-  server.use(route.get('/consent/send', routes.consentSendGet));
-  server.use(route.post('/consent/send', routes.consentSendPost));
+  server.use(mount('/admin', auth({name: 'k', pass: 'k'})));
+
+  server.use(route.get('/admin/status', routes.consentStatus));
+  server.use(route.get('/admin/send', routes.consentSendGet));
+  server.use(route.post('/admin/send', routes.consentSendPost));
   server.use(route.get('/consent/form/:personID', routes.consentForm));
   server.use(route.post('/consent/update/:analysisNumber/:personID', routes.updateConsent));
 
