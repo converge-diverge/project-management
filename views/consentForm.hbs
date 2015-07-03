@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Data Consent Form</title>
+
+    <style type="text/css">
+    .analysis {
+      margin-top: 1em;
+    }
+
+    .analysis .field {
+      margin-bottom: 0.25em;
+    }
+
+    .analysis .header {
+      font-weight: bold;
+    }
+
+    .consent {
+      margin-top: 3em;
+
+      padding: 1em;
+
+      border: solid 1px #000;
+    }
+
+    .consent .confirmation-text {
+      margin-bottom: 1em;
+    }
+
+    .consent .submit {
+      margin-top: 1em;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Convergence/Divergence of Plant Communities with Global Change Factors</h1>
+
+    <div class="emails">
+      <a href="mailto:lapierre.kimberly@gmail.com">Kimberly La Pierre</a>&nbsp;
+      <a href="mailto:meghan.avolio@gmail.com">Meghan Avolio</a>
+    </div>
+
+    <div class="analysis">
+      <div class="field"><span class="header">Opt-In Analysis #{{analysis.number}}</span></div>
+      <div class="field"><span class="header">Title:</span> <span class="value">{{analysis.title}}</span></div>
+      <div class="field"><span class="header">Organizers:</span> <span class="value">
+        {{#each analysis.organizers}}
+        <a href="mailto:{{email}}">{{name}}</a>
+        {{/each}}
+      </div>
+      <div class="field"><span class="header">Abstract:</span> {{analysis.abstract}}</div>
+    </div>
+
+    <div class="consent">
+      <div class="confirmation-text">I consent that my data can be included in the analysis for Opt-In Analysis #{{analysis.id}}, as described above.</div>
+
+      <form method="post" action="/consent/update/{{analysis.number}}/{{person.id}}">
+      {{#each person.projects}}
+        <div class="project">
+          {{site}}: {{project}}
+          <input type="radio" name="{{id}}" value="yes" required{{#if status.hasConsented}} checked{{/if}}>Yes
+          <input type="radio" name="{{id}}" value="no" required{{#if status.hasConsented}}{{else}} checked{{/if}}>No
+        </div>
+      {{/each}}
+        <input type="submit" class="submit" value="Submit">
+      </form>
+    </div>
+  </body>
+</html>

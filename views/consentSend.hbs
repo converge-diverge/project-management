@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Consent Send</title>
+
+    <style type="text/css">
+    .projects {
+      margin-bottom: 2em;
+    }
+
+    .project {
+      display: block;
+    }
+    </style>
+  </head>
+  <body>
+    <form method="post" action="/consent/send">
+      <div class="projects">
+      {{#each projects}}
+        <label class="project">
+          <input type="checkbox" name="{{id}}"> {{site}}: {{project}}
+        </label>
+      {{/each}}
+      </div>
+      <input type="submit" value="Submit">
+    </form>
+  </body>
+</html>

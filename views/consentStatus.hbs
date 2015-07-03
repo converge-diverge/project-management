@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Consent Status</title>
+
+    <style type="text/css">
+    .email-sent- {
+      color: #000;
+    }
+    .email-sent-true {
+      color: #0f0;
+    }
+    .email-sent-false {
+      color: #f00;
+    }
+
+    .has-responded- {
+
+    }
+    .has-responded-true {
+      color: #0f0;
+    }
+    .has-responded-false {
+      color: #f00;
+    }
+
+    .has-consented- {
+
+    }
+    .has-consented-true {
+      color: #0f0;
+    }
+    .has-consented-false {
+      color: #f00;
+    }
+    </style>
+  </head>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>id</th>
+          <th>site</th>
+          <th>project</th>
+          <th>email sent?</th>
+          <th>has responded?</th>
+          <th>has consented?</th>
+          <th>responded at</th>
+        </tr>
+      </thead>
+      <tbody>
+      {{#each projects}}
+        <tr>
+          <td>{{id}}</td>
+          <td>{{site}}</td>
+          <td>{{project}}</td>
+          <td class="email-sent-{{status.emailSent}}">{{status.emailSent}}</td>
+          <td class="has-responded-{{status.hasResponded}}">{{status.hasResponded}}</td>
+          <td class="has-consented-{{status.hasConsented}}">{{status.hasConsented}}</td>
+          <td class="responded-at">{{status.respondedAt}}</td>
+        </tr>
+      {{/each}}
+      </tbody>
+    </table>
+  </body>
+</html>
