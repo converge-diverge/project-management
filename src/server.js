@@ -1,9 +1,14 @@
+import http from 'http';
+import https from 'https';
+
 import koa from 'koa';
 import auth from 'koa-basic-auth';
 import bodyparser from 'koa-bodyparser';
 import handlebars from 'koa-handlebars';
 import mount from 'koa-mount';
 import route from 'koa-route';
+
+import mailer from 'nodemailer';
 
 import _ from 'lodash';
 
@@ -27,7 +32,7 @@ module.exports = {
   start
 };
 
-function start(port, database, data) {
+function start(config, database, data) {
   const server = koa();
 
   const routes = {
@@ -63,9 +68,15 @@ function start(port, database, data) {
   server.use(route.get('/consent/form/:personID', routes.consentForm));
   server.use(route.post('/consent/update/:analysisNumber/:personID', routes.updateConsent));
 
-  server.listen(port);
+  const {ports, cert, key} = config;
 
-  console.log('Server is listening on port', port);
+  http.createServer(server.callback()).listen(ports.http);
+  https.createServer({ca:[], cert, key}, server.callback()).listen(ports.https);
+  // server.listen(port);
+
+
+  console.log('HTTP server is listening on port', ports.http);
+  console.log('HTTPS server is listening on port', ports.https);
 
   function *consentStatus() {
     const projects = _.flatten(_.map(database, (person, personID) => {
@@ -98,7 +109,7 @@ function start(port, database, data) {
       return projectID !== undefined;
     });
 
-    const people = _.unique(_.map(projects, projectID => {
+    const persons = _.unique(_.map(projects, projectID => {
       const project = getProject(projectID),
             {personID} = project,
             person = getPerson(personID);
@@ -106,7 +117,24 @@ function start(port, database, data) {
       return person;
     }));
 
-    console.log({projects, people});
+    console.log({projects, persons});
+
+    sendEmails(persons);
+
+    function sendEmails(persons) {
+      const transporter = mailer.createTransporter({
+        service: 'Gmail',
+        auth: {
+
+        }
+      });
+
+      _.each(persons, sendEmail);
+
+      function sendEmail(person) {
+
+      }
+    }
   }
 
   function *consentForm(personID) {

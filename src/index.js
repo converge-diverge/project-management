@@ -1,5 +1,6 @@
 require('babel/polyfill');
 
+import fs from 'fs';
 import util from 'util';
 
 import _ from 'lodash';
@@ -7,7 +8,18 @@ import _ from 'lodash';
 import data from './data';
 import server from './server';
 
-const port = 8257;
+
+const cert = fs.readFileSync('./keys/cert'),
+      key = fs.readFileSync('./keys/key');
+
+const config = {
+  ports: {
+    http: 8257,
+    https: 8258
+  },
+  cert,
+  key
+};
 
 data.getOrCreate((err, database) => {
   if (err) throw err;
@@ -24,7 +36,7 @@ data.getOrCreate((err, database) => {
       console.log('Read', _.keys(database).length, 'people!');
       console.log('Read', count, 'projects!');
 
-      server.start(port, database, data);
+      server.start(config, database, data);
     });
   }
 });

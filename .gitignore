@@ -3,3 +3,6 @@ node_modules
 container/app
 # added by GitSavvy
 /data/
+
+# added by GitSavvy
+/keys/
