@@ -74,7 +74,21 @@ function start(port, database, data) {
     const {request} = this,
           {body} = request;
 
+    const projects = _.filter(_.map(body, (on, projectID) => {
+      return on === 'on' ? projectID : undefined;
+    }), projectID => {
+      return projectID !== undefined;
+    });
 
+    const people = _.unique(_.map(projects, projectID => {
+      const project = getProject(projectID),
+            {personID} = project,
+            person = getPerson(personID);
+
+      return person;
+    }));
+
+    console.log({projects, people});
   }
 
   function *consentForm(personID) {
@@ -117,11 +131,15 @@ function start(port, database, data) {
     yield this.render('thanks', {projects, analysis, personID});
   }
 
+  function getPerson(personID) {
+    return database[personID];
+  }
+
   function getProject(projectID) {
     let p;
     _.each(database, (person, personID) => {
       _.each(person.projects, project => {
-        if (project.id === projectID) p = project;
+        if (project.projectID === projectID) p = project;
       });
     });
     return p;

@@ -31,7 +31,7 @@ function getOrCreate(callback) {
         const [email, site, project] = line.split('\t');
         return {
           email,
-          id: uuid.v4(),
+          projectID: uuid.v4(),
           site,
           project,
           status: {
@@ -44,19 +44,19 @@ function getOrCreate(callback) {
       });
 
       const people = _.mapKeys(_.mapValues(_.groupBy(projects, 'email'), (projects, email) => {
-        const id = uuid.v4();
+        const personID = uuid.v4();
 
         return {
-          id: id,
+          personID: personID,
           email: email,
           projects: _.map(projects, project => {
-            project.personID = id;
+            project.personID = personID;
 
             return project;
           })
         };
       }), (value, key) => {
-        return value.id;
+        return value.personID;
       });
 
       callback(null, people);
