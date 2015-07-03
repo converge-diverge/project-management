@@ -1,3 +1,5 @@
+import util from 'util';
+
 import http from 'http';
 import https from 'https';
 
@@ -16,12 +18,13 @@ const analysis = {
   number: 1,
   title: 'Patches are AMAZING!',
   abstract: 'Patches of vegetation are so cool. But no one really studies them. Until now! We propose to analyze patches of vegetation in the best way possible. Please let us use your data to do it.',
+  emailSubject: '!TEST! New Converge/Diverge Opt-In Analysis !TEST!',
   organizers: [{
     name: 'Kevin Wilcox',
-    email: 'wilcoxkr@gmail.com'
+    email: 'kevin@kevin.com'
   },{
     name: 'Sally Koerner',
-    email: 'sally.koerner@duke.edu'
+    email: 'sally@sally.com'
   },{
     name: 'Emily Grman',
     email: 'emily@emily.com'
@@ -33,7 +36,8 @@ module.exports = {
 };
 
 function start(config, database, data) {
-  const server = koa();
+  const server = koa(),
+        adminServer = koa();
 
   const routes = {
     consentStatus,
@@ -43,7 +47,7 @@ function start(config, database, data) {
     updateConsent
   };
 
-  server.use(function *(next){
+  adminServer.use(function *(next){
     try {
       yield next;
     } catch (err) {
@@ -57,23 +61,25 @@ function start(config, database, data) {
     }
   });
 
+  adminServer.use(mount('/admin', auth({name: 'k', pass: 'k'})));
+
+  adminServer.use(bodyparser());
+  adminServer.use(handlebars({cache: false}));
+
+  adminServer.use(route.get('/admin/status', routes.consentStatus));
+  adminServer.use(route.get('/admin/send', routes.consentSendGet));
+  adminServer.use(route.post('/admin/send', routes.consentSendPost));
+
+
   server.use(bodyparser());
   server.use(handlebars({cache: false}));
-
-  server.use(mount('/admin', auth({name: 'k', pass: 'k'})));
-
-  server.use(route.get('/admin/status', routes.consentStatus));
-  server.use(route.get('/admin/send', routes.consentSendGet));
-  server.use(route.post('/admin/send', routes.consentSendPost));
   server.use(route.get('/consent/form/:personID', routes.consentForm));
   server.use(route.post('/consent/update/:analysisNumber/:personID', routes.updateConsent));
 
   const {ports, cert, key} = config;
 
   http.createServer(server.callback()).listen(ports.http);
-  https.createServer({ca:[], cert, key}, server.callback()).listen(ports.https);
-  // server.listen(port);
-
+  https.createServer({ca:[], cert, key}, adminServer.callback()).listen(ports.https);
 
   console.log('HTTP server is listening on port', ports.http);
   console.log('HTTPS server is listening on port', ports.https);
@@ -104,35 +110,110 @@ function start(config, database, data) {
           {body} = request;
 
     const projects = _.filter(_.map(body, (on, projectID) => {
-      return on === 'on' ? projectID : undefined;
-    }), projectID => {
-      return projectID !== undefined;
+      return on === 'on' ? getProject(projectID) : undefined;
+    }), project => {
+      return project !== undefined;
     });
 
-    const persons = _.unique(_.map(projects, projectID => {
-      const project = getProject(projectID),
-            {personID} = project,
-            person = getPerson(personID);
+    const emails = _.map(_.groupBy(projects, 'personID'), (projects, personID) => {
+      return {
+        person: getPerson(personID),
+        projects
+      };
+    });
 
-      return person;
-    }));
+    // const persons = _.unique(_.map(projects, projectID => {
+    //   const project = getProject(projectID),
+    //         {personID} = project,
+    //         {email} = getPerson(personID);
 
-    console.log({projects, persons});
+    //   return {personID, projectID, email};
+    // }), 'personID');
 
-    sendEmails(persons);
 
-    function sendEmails(persons) {
-      const transporter = mailer.createTransporter({
-        service: 'Gmail',
+    const names = _.pluck(analysis.organizers, 'name'),
+          {host} = config;
+
+    for (let i = 0; i < emails.length; i++) {
+      const emailRecord = emails[i],
+            {person} = emailRecord,
+            {personID} = person;
+
+      emailRecord.emailText = yield this.renderView('consentEmail', {
+        organizers: names.join(', '),
+        organizersWithAnd: makeAndText(names),
+        link: `http://${host}/consent/form/${personID}`,
+        title: analysis.title,
+        abstract: analysis.abstract
+      });
+    }
+
+    this.body = sendEmails(emails);
+
+    function sendEmails(emails) {
+      const {email, password} = body;
+
+      if (!email || !password) {
+        return 'No email or password!';
+      }
+
+      const transporter = mailer.createTransport({
+        service: 'gmail',
+        secure: true,
         auth: {
-
+          user: email,
+          pass: password
         }
       });
 
-      _.each(persons, sendEmail);
+      _.each(emails, sendEmail);
 
-      function sendEmail(person) {
+      return 'sent! (maybe)';
 
+      function sendEmail(emailRecord) {
+        console.log('sending email to', emailRecord);
+
+        const {person, projects} = emailRecord;
+
+        const options = {
+          from: email,
+          to: person.email,
+          subject: analysis.emailSubject,
+          text: emailRecord.emailText
+        };
+
+        transporter.sendMail(options, (error, info) => {
+          if (error) {
+            console.log('Error sending mail', options, error);
+          }
+          const project = getProject(person.projectID);
+
+          _.each(projects, project => {
+            project.status.emailSent = true;
+          });
+
+          data.save(database);
+          console.log('Email sent!', options,  info);
+        });
+      }
+    }
+
+    function makeAndText(names) {
+      const {length} = names;
+
+      if (length === 0) return '';
+      else if (length === 1) return names[0];
+      else if (length === 2) return names[0] + ' and ' + names[1];
+      else {
+        let text = names[0];
+
+        for (let i = 1; i < length - 1; i++) {
+          text += ', ' + names[i];
+        }
+
+        text += ', and ' + names[length - 1];
+
+        return text;
       }
     }
   }
