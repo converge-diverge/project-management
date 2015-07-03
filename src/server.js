@@ -13,10 +13,10 @@ const analysis = {
   abstract: 'Patches of vegetation are so cool. But no one really studies them. Until now! We propose to analyze patches of vegetation in the best way possible. Please let us use your data to do it.',
   organizers: [{
     name: 'Kevin Wilcox',
-    email: 'krwilcox@gmail.com'
+    email: 'wilcoxkr@gmail.com'
   },{
     name: 'Sally Koerner',
-    email: 'skoerne@duke.edu'
+    email: 'sally.koerner@duke.edu'
   },{
     name: 'Emily Grman',
     email: 'emily@emily.com'
