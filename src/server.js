@@ -129,9 +129,7 @@ function start(config, database, data) {
 
     const projects = _.filter(_.map(body, (on, projectID) => {
       return on === 'on' ? getProject(projectID) : undefined;
-    }), project => {
-      return project !== undefined;
-    });
+    }), project => (project !== undefined));
 
     const emails = _.map(_.groupBy(projects, 'personID'), (projects, personID) => {
       return {

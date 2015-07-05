@@ -55,9 +55,7 @@ function getOrCreate(callback) {
             return project;
           })
         };
-      }), (value, key) => {
-        return value.personID;
-      });
+      }), value => (value.personID));
 
       callback(null, people);
     });
