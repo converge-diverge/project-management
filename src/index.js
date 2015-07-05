@@ -14,6 +14,8 @@ const cert = fs.readFileSync('./keys/cert'),
 
 const config = {
   host: process.env.host || '192.168.1.244:8257' || 'localhost:80',
+  adminName: process.env.admin_name || 'k',
+  adminPass: process.env.admin_pass || 'k',
   ports: {
     http: 8257,
     https: 8258
