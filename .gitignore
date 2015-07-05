@@ -6,3 +6,6 @@ container/app
 
 # added by GitSavvy
 /keys/
+
+# added by GitSavvy
+/.package/app.js
