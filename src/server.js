@@ -36,18 +36,99 @@ module.exports = {
 };
 
 function start(config, database, data) {
-  const server = koa(),
-        adminServer = koa();
-
-  const routes = {
-    consentStatus,
-    consentSendGet,
-    consentSendPost,
-    consentForm,
-    updateConsent
+  const stacks = {
+    admin: {
+      middleware: [
+        authRedirect,
+        mount('/admin', auth({name: 'k', pass: 'k'})),
+        bodyparser(),
+        handlebars({cache: false})
+      ],
+      routes: {
+        '/admin': {
+          routes: {
+            '/status': {
+              methods: {
+                'get': getStatus
+              }
+            },
+            '/send': {
+              methods: {
+                'get': getSend,
+                'post': postSend
+              }
+            }
+          }
+        }
+      }
+    },
+    consent: {
+      middleware: [
+        bodyparser(),
+        handlebars({cache: false})
+      ],
+      routes: {
+        '/consent': {
+          routes: {
+            '/form/:personID': {
+              methods: {
+                'get': getForm
+              }
+            },
+            '/update/:analysisNumber/:personID': {
+              methods: {
+                'post': postUpdate
+              }
+            }
+          }
+        }
+      }
+    }
   };
 
-  adminServer.use(function *(next){
+  const {
+    admin,
+    consent
+  } = _.mapValues(stacks, stack => {
+    const {
+      middleware,
+      routes
+    } = stack;
+
+    const server = koa(),
+          {use} = server;
+
+    _.each(middleware || [], use.bind(server));
+
+    _.each(routes, addRoute);
+
+    return server;
+
+    function addRoute(definition, path) {
+      const {methods, routes} = definition;
+
+      _.each(methods, (handler, method) => {
+        console.log(`Adding '${method}' route at '${path}'`);
+        use.call(server, route[method](path, handler));
+      });
+
+      _.each(routes, addSubRoute);
+
+      function addSubRoute(subDefinition, subPath) {
+        addRoute(subDefinition, path + subPath);
+      }
+    }
+  });
+
+  const {ports, cert, key} = config;
+
+  http.createServer(consent.callback()).listen(ports.http);
+  https.createServer({ca:[], cert, key}, admin.callback()).listen(ports.https);
+
+  console.log('HTTP server is listening on port', ports.http);
+  console.log('HTTPS server is listening on port', ports.https);
+
+  function *authRedirect(next){
     try {
       yield next;
     } catch (err) {
@@ -59,32 +140,9 @@ function start(config, database, data) {
         throw err;
       }
     }
-  });
+  }
 
-  adminServer.use(mount('/admin', auth({name: 'k', pass: 'k'})));
-
-  adminServer.use(bodyparser());
-  adminServer.use(handlebars({cache: false}));
-
-  adminServer.use(route.get('/admin/status', routes.consentStatus));
-  adminServer.use(route.get('/admin/send', routes.consentSendGet));
-  adminServer.use(route.post('/admin/send', routes.consentSendPost));
-
-
-  server.use(bodyparser());
-  server.use(handlebars({cache: false}));
-  server.use(route.get('/consent/form/:personID', routes.consentForm));
-  server.use(route.post('/consent/update/:analysisNumber/:personID', routes.updateConsent));
-
-  const {ports, cert, key} = config;
-
-  http.createServer(server.callback()).listen(ports.http);
-  https.createServer({ca:[], cert, key}, adminServer.callback()).listen(ports.https);
-
-  console.log('HTTP server is listening on port', ports.http);
-  console.log('HTTPS server is listening on port', ports.https);
-
-  function *consentStatus() {
+  function *getStatus() {
     const projects = _.flatten(_.map(database, (person, personID) => {
       return _.map(person.projects, project => {
         return project;
@@ -94,7 +152,7 @@ function start(config, database, data) {
     yield this.render('consentStatus', {projects});
   }
 
-  function *consentSendGet() {
+  function *getSend() {
     const projects = _.flatten(_.map(database, (person, personID) => {
       return _.map(person.projects, project => {
         return project;
@@ -104,7 +162,7 @@ function start(config, database, data) {
     yield this.render('consentSend', {projects});
   }
 
-  function *consentSendPost() {
+  function *postSend() {
     console.log(this.request.body);
     const {request} = this,
           {body} = request;
@@ -218,7 +276,7 @@ function start(config, database, data) {
     }
   }
 
-  function *consentForm(personID) {
+  function *getForm(personID) {
     const person = getPerson(personID);
 
     if (!person) return;
@@ -226,7 +284,7 @@ function start(config, database, data) {
     yield this.render('consentForm', {person, analysis});
   }
 
-  function *updateConsent(analysisNumber, personID) {
+  function *postUpdate(analysisNumber, personID) {
     const {request} = this,
           {body} = request;
 
