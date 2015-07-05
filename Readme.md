@@ -1,73 +1,30 @@
-#base-node
+Currently a dataset use per-project consent management platform.
 
-A simple and highly configurable base project for ECMAScript 2015 projects.
-
-Out-of-the-box support for:
-  1. Packaging your application (including dependencies) into a single, compacted script file.
-  2. Generating a minimal Docker container (<10MB download, <26MB expanded) so that your app can be deployed everywhere.
-
-
-###Installation
+Run with:
 
 ````
-$ curl https://raw.githubusercontent.com/blakelapierre/base-node/master/create.sh | bash -s your-project-name
+docker run \
+  -p 80:8257 \
+  -p 443:8258 \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/keys:/app/keys \
+  -e host=public_ip_address \
+  blakelapierre/converge-diverge
 ````
 
-The above command will create a new git repository named `your-project-name` in your current directory.
-
-#####OR
-
+Develop with:
 
 ````
-$ git clone https://github.com/blakelapierre/base-node
-$ cd base-node
-$ npm install -g gulp gulpur
-$ npm install
+npm install
+npm install -g gulpur
+
+gulpur dev
 ````
 
-
-###Building
-
-````
-$ gulpur build
-````
-
-###Running
+Package into container with:
 
 ````
-$ node .dist/index.js
+gulpur build
+cd container
+./build.sh
 ````
-
-Tests:
-````
-$ node .dist/tests/index.js
-````
-
-###Developing
-This command will watch your source files for changes and run them through `jshint` and the transpiler when they change.
-
-````
-$ gulpur watch
-````
-
------------
-This command will do what `watch` does, but will also run your program after transpiling and will restart it after each transpile.
-
-````
-$ gulpur dev
-````
-
-
-###Containerizing
-
-
-````
-$ gulpur package
-$ cd container
-$ ./build.sh
-$ ./publish.sh
-````
-
-First, run the `package` task to produce a single-file, minimized version of your app.
-
-Then, go into the `container` folder to access the scripts to package your app into a Docker container. You should edit the `build.sh` and `publish.sh` scripts to use a container name that fits your project name.
