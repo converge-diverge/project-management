@@ -4,12 +4,9 @@ import http from 'http';
 import https from 'https';
 
 import constructStacks from 'koa-stacks';
-import koa from 'koa';
-import auth from 'koa-basic-auth';
+
 import bodyparser from 'koa-bodyparser';
 import handlebars from 'koa-handlebars';
-import mount from 'koa-mount';
-import route from 'koa-route';
 
 import mailer from 'nodemailer';
 
@@ -143,15 +140,6 @@ function start(config, database, data) {
         projects
       };
     });
-
-    // const persons = _.unique(_.map(projects, projectID => {
-    //   const project = getProject(projectID),
-    //         {personID} = project,
-    //         {email} = getPerson(personID);
-
-    //   return {personID, projectID, email};
-    // }), 'personID');
-
 
     const names = _.pluck(analysis.organizers, 'name'),
           {host} = config;
