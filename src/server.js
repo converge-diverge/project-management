@@ -38,9 +38,12 @@ module.exports = {
 function start(config, database, data) {
   const stacks = {
     admin: {
+      authorization: {
+        type: 'basic',
+        name: 'k',
+        pass: 'k'
+      },
       middleware: [
-        authRedirect,
-        mount('/admin', auth({name: 'k', pass: 'k'})),
         bodyparser(),
         handlebars({cache: false})
       ],
@@ -89,8 +92,11 @@ function start(config, database, data) {
   const {
     admin,
     consent
-  } = _.mapValues(stacks, stack => {
+  } = _.mapValues(stacks, (stack, stackName) => {
+    console.log(`Constructing '${stackName}' stack`);
+
     const {
+      authorization,
       middleware,
       routes
     } = stack;
@@ -98,17 +104,63 @@ function start(config, database, data) {
     const server = koa(),
           {use} = server;
 
+    if (authorization) {
+      const {type} = authorization;
+
+      if (type === 'basic') {
+        const {name, pass} = authorization;
+
+        use.call(server, authorizationRedirect);
+        use.call(server, auth({name, pass}));
+      }
+    }
+
+    const routeAuthorizations = getRouteAuthorizations(routes);
+
+    if (routeAuthorizations.length > 0) {
+      if (!authorization) use.call(server, authorizationRedirect);
+
+      _.each(routeAuthorizations, routeAuthorization => {
+        const {path, authorization} = routeAuthorization,
+              {type} = authorization;
+
+        if (type === 'basic') {
+          const {name, pass} = authorization;
+
+          use.call(server, mount(path, auth({name, pass})));
+        }
+      });
+    }
+
     _.each(middleware || [], use.bind(server));
 
     _.each(routes, addRoute);
 
     return server;
 
+    function getRouteAuthorizations(routes = {}, parentPath = '') {
+      return _.filter(_.flatten(_.map(routes, (definition, path) => {
+        const {authorization, routes} = definition;
+
+        path = parentPath + path;
+
+        if (authorization) {
+          return [{
+            path,
+            authorization,
+          }].concat(getRouteAuthorizations(routes, path));
+        }
+        else return getRouteAuthorizations(routes, path);
+
+
+      })), value => value !== undefined);
+    }
+
     function addRoute(definition, path) {
-      const {methods, routes} = definition;
+      const {methods, routes, authorization} = definition;
 
       _.each(methods, (handler, method) => {
-        console.log(`Adding '${method}' route at '${path}'`);
+        console.log(`Adding ${authorization ? 'protected ' : ''}'${method}' route at '${path}'`);
         use.call(server, route[method](path, handler));
       });
 
@@ -125,10 +177,10 @@ function start(config, database, data) {
   http.createServer(consent.callback()).listen(ports.http);
   https.createServer({ca:[], cert, key}, admin.callback()).listen(ports.https);
 
-  console.log('HTTP server is listening on port', ports.http);
-  console.log('HTTPS server is listening on port', ports.https);
+  console.log('consent stack is running an HTTP server on port', ports.http);
+  console.log('admin stack is running an HTTPS server on port', ports.https);
 
-  function *authRedirect(next){
+  function *authorizationRedirect(next){
     try {
       yield next;
     } catch (err) {
