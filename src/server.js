@@ -57,7 +57,7 @@ function start(config, database, data) {
             },
             '/send': {
               methods: {
-                'get': getSend,
+                'get':  getSend,
                 'post': postSend
               }
             }
@@ -124,7 +124,6 @@ function start(config, database, data) {
   }
 
   function *postSend() {
-    console.log(this.request.body);
     const {request} = this,
           {body} = request;
 
@@ -144,6 +143,7 @@ function start(config, database, data) {
     const names = _.pluck(analysis.organizers, 'name'),
           {host} = config;
 
+    // can't use each to loop through, because we need to use 'yield' below...
     for (let i = 0; i < emails.length; i++) {
       const emailRecord = emails[i],
             {person} = emailRecord,
@@ -158,54 +158,70 @@ function start(config, database, data) {
       });
     }
 
-    this.body = sendEmails(emails);
+    const emailCount = yield sendEmails(emails);
+
+    this.body = `<!doctype html><html><head><meta http-equiv="refresh" content="4; url=/admin/status"></head><body><div>Tried to send ${emailCount} emails</div><div>Redirecting you to <a href="/admin/status">/admin/status</a> in 4 seconds</div></body></html>`;
 
     function sendEmails(emails) {
-      const {email, password} = body;
+      return new Promise((resolve, reject) => {
+        if (emails.length === 0) return resolve(0);
 
-      if (!email || !password) {
-        return 'No email or password!';
-      }
+        const {email, password} = body;
 
-      const transporter = mailer.createTransport({
-        service: 'gmail',
-        secure: true,
-        auth: {
-          user: email,
-          pass: password
+        if (!email || !password) {
+          return 'No email or password!';
+        }
+
+        const transporter = mailer.createTransport({
+          service: 'gmail',
+          secure: true,
+          auth: {
+            user: email,
+            pass: password
+          }
+        });
+
+        let emailsToSend = emails.length;
+
+        _.each(emails, sendEmail);
+
+        return 'sent! (maybe)';
+
+        function sendEmail(emailRecord) {
+          console.log('sending email to', emailRecord);
+
+          const {person, projects} = emailRecord;
+
+          const options = {
+            from: email,
+            to: person.email,
+            subject: analysis.emailSubject,
+            text: emailRecord.emailText
+          };
+
+          transporter.sendMail(options, (error, info) => {
+            emailsToSend--;
+
+            if (error) {
+              console.log('Error sending mail', options, error);
+            }
+            else {
+              const project = getProject(person.projectID);
+
+              _.each(projects, project => {
+                project.status.emailSent = true;
+              });
+
+              data.save(database);
+              console.log('Email sent!', options,  info);
+            }
+
+            console.log(`${emailsToSend} emails remain...`);
+
+            if (emailsToSend === 0) resolve(emails.length);
+          });
         }
       });
-
-      _.each(emails, sendEmail);
-
-      return 'sent! (maybe)';
-
-      function sendEmail(emailRecord) {
-        console.log('sending email to', emailRecord);
-
-        const {person, projects} = emailRecord;
-
-        const options = {
-          from: email,
-          to: person.email,
-          subject: analysis.emailSubject,
-          text: emailRecord.emailText
-        };
-
-        transporter.sendMail(options, (error, info) => {
-          if (error) {
-            console.log('Error sending mail', options, error);
-          }
-          const project = getProject(person.projectID);
-
-          _.each(projects, project => {
-            project.status.emailSent = true;
-          });
-
-          data.save(database);
-          console.log('Email sent!', options,  info);
-        });
-      }
     }
 
     function makeAndText(names) {
