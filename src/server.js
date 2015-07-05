@@ -3,6 +3,7 @@ import util from 'util';
 import http from 'http';
 import https from 'https';
 
+import constructStacks from 'koa-stacks';
 import koa from 'koa';
 import auth from 'koa-basic-auth';
 import bodyparser from 'koa-bodyparser';
@@ -36,12 +37,14 @@ module.exports = {
 };
 
 function start(config, database, data) {
+  const {adminName, adminPass} = config;
+
   const stacks = {
     admin: {
       authorization: {
         type: 'basic',
-        name: 'k',
-        pass: 'k'
+        name: adminName,
+        pass: adminPass
       },
       middleware: [
         bodyparser(),
@@ -92,85 +95,7 @@ function start(config, database, data) {
   const {
     admin,
     consent
-  } = _.mapValues(stacks, (stack, stackName) => {
-    console.log(`Constructing '${stackName}' stack`);
-
-    const {
-      authorization,
-      middleware,
-      routes
-    } = stack;
-
-    const server = koa(),
-          {use} = server;
-
-    if (authorization) {
-      const {type} = authorization;
-
-      if (type === 'basic') {
-        const {name, pass} = authorization;
-
-        use.call(server, authorizationRedirect);
-        use.call(server, auth({name, pass}));
-      }
-    }
-
-    const routeAuthorizations = getRouteAuthorizations(routes);
-
-    if (routeAuthorizations.length > 0) {
-      if (!authorization) use.call(server, authorizationRedirect);
-
-      _.each(routeAuthorizations, routeAuthorization => {
-        const {path, authorization} = routeAuthorization,
-              {type} = authorization;
-
-        if (type === 'basic') {
-          const {name, pass} = authorization;
-
-          use.call(server, mount(path, auth({name, pass})));
-        }
-      });
-    }
-
-    _.each(middleware || [], use.bind(server));
-
-    _.each(routes, addRoute);
-
-    return server;
-
-    function getRouteAuthorizations(routes = {}, parentPath = '') {
-      return _.filter(_.flatten(_.map(routes, (definition, path) => {
-        const {authorization, routes} = definition;
-
-        path = parentPath + path;
-
-        if (authorization) {
-          return [{
-            path,
-            authorization,
-          }].concat(getRouteAuthorizations(routes, path));
-        }
-        else return getRouteAuthorizations(routes, path);
-
-
-      })), value => value !== undefined);
-    }
-
-    function addRoute(definition, path) {
-      const {methods, routes, authorization} = definition;
-
-      _.each(methods, (handler, method) => {
-        console.log(`Adding ${authorization ? 'protected ' : ''}'${method}' route at '${path}'`);
-        use.call(server, route[method](path, handler));
-      });
-
-      _.each(routes, addSubRoute);
-
-      function addSubRoute(subDefinition, subPath) {
-        addRoute(subDefinition, path + subPath);
-      }
-    }
-  });
+  } = constructStacks(stacks, console.log);
 
   const {ports, cert, key} = config;
 
@@ -180,19 +105,6 @@ function start(config, database, data) {
   console.log('consent stack is running an HTTP server on port', ports.http);
   console.log('admin stack is running an HTTPS server on port', ports.https);
 
-  function *authorizationRedirect(next){
-    try {
-      yield next;
-    } catch (err) {
-      if (401 == err.status) {
-        this.status = 401;
-        this.set('WWW-Authenticate', 'Basic');
-        this.body = 'Unauthorized';
-      } else {
-        throw err;
-      }
-    }
-  }
 
   function *getStatus() {
     const projects = _.flatten(_.map(database, (person, personID) => {
