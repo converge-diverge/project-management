@@ -219,7 +219,7 @@ function start(config, database, data) {
   }
 
   function *consentForm(personID) {
-    const person = database[personID];
+    const person = getPerson(personID);
 
     if (!person) return;
 
