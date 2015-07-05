@@ -56,15 +56,25 @@
       <div class="confirmation-text">I consent that my data can be included in the analysis for Opt-In Analysis #{{analysis.number}}, as described above.</div>
 
       <form method="post" action="/consent/update/{{analysis.number}}/{{person.personID}}">
-      {{#each person.projects}}
-        {{#if emailSent}}
-          <div class="project">
-            {{site}}: {{project}}
-            <input type="radio" name="{{projectID}}" value="yes" required{{#if status.hasConsented}} checked{{/if}}>Yes
-            <input type="radio" name="{{projectID}}" value="no" required{{#if status.hasConsented}}{{else}} checked{{/if}}>No
-          </div>
-        {{/if}}
-      {{/each}}
+        <table>
+        {{#each person.projects}}
+          {{#if status.emailSent}}
+            <tr class="project">
+              <td>{{site}}: {{project}}</td>
+              <td>
+                <label>
+                  <input type="radio" name="{{projectID}}" value="yes" required{{#if status.hasConsented}} checked{{/if}}>Yes
+                </label>
+              </td>
+              <td>
+                <label>
+                  <input type="radio" name="{{projectID}}" value="no" required{{#if status.hasConsented}}{{else}} checked{{/if}}>No
+                </label>
+              </td>
+            </tr>
+          {{/if}}
+        {{/each}}
+        </table>
         <input type="submit" class="submit" value="Submit">
       </form>
     </div>
