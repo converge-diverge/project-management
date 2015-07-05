@@ -47,8 +47,8 @@ function getOrCreate(callback) {
         const personID = uuid.v4();
 
         return {
-          personID: personID,
-          email: email,
+          personID,
+          email,
           projects: _.map(projects, project => {
             project.personID = personID;
 
