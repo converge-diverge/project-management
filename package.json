@@ -1,8 +1,8 @@
 {
-  "name": "base-node",
-  "version": "0.1.1",
-  "description": "Base Node.JS Development Environment",
-  "repository": "https://github.com/blakelapierre/base-node",
+  "name": "converge-diverge",
+  "version": "0.0.1",
+  "description": "Prototype Project Management System",
+  "repository": "https://github.com/blakelapierre/converge-diverge",
   "main": "index.js",
   "author": "Blake La Pierre",
   "license": "MIT",
