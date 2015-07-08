@@ -16,7 +16,7 @@ const analysis = {
   number: 1,
   title: 'Patches are AMAZING!',
   abstract: 'Patches of vegetation are so cool. But no one really studies them. Until now! We propose to analyze patches of vegetation in the best way possible. Please let us use your data to do it.',
-  emailSubject: '!TEST! New Converge/Diverge Opt-In Analysis !TEST!',
+  emailSubject: 'updates on converge/diverge working group',
   organizers: [{
     name: 'Kevin Wilcox',
     email: 'kevin@kevin.com'
@@ -183,7 +183,7 @@ function start(config, database, data) {
         const {email, password} = body;
 
         if (!email || !password) {
-          return 'No email or password!';
+          return reject('No email or password!');
         }
 
         const transporter = mailer.createTransport({
