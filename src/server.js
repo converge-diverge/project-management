@@ -127,9 +127,25 @@ function start(config, database, data) {
     const {request} = this,
           {body} = request;
 
-    const projects = _.filter(_.map(body, (on, projectID) => {
-      return on === 'on' ? getProject(projectID) : undefined;
-    }), project => (project !== undefined));
+    // const projects = _.filter(_.map(body, (on, projectID) => {
+    //   return on === 'on' ? getProject(projectID) : undefined;
+    // }), project => (project !== undefined));
+
+    const projects = _.reduce(body, (selected, on, projectID) => {
+      if (on === 'on') {
+        const project = getProject(projectID);
+
+        if (!project) throw Error('Invalid projectID', projectID);
+
+        selected.push(project);
+      }
+      return selected;
+    }, []);
+
+
+    // const projects = _.filter(
+    //                       _.map(body, (on, projectID) => on === 'on' ? getProject(projectID) : undefined)
+    //                       , project => (project !== undefined));
 
     const emails = _.map(_.groupBy(projects, 'personID'), (projects, personID) => {
       return {
