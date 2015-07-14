@@ -104,21 +104,13 @@ function start(config, database, data) {
 
 
   function *getStatus() {
-    const projects = _.flatten(_.map(database, (person, personID) => {
-      return _.map(person.projects, project => {
-        return project;
-      });
-    }));
+    const projects = getProjects();
 
     yield this.render('consentStatus', {projects});
   }
 
   function *getSend() {
-    const projects = _.flatten(_.map(database, (person, personID) => {
-      return _.map(person.projects, project => {
-        return project;
-      });
-    }));
+    const projects = getProjects();
 
     yield this.render('consentSend', {projects});
   }
@@ -310,5 +302,13 @@ function start(config, database, data) {
       });
     });
     return p;
+  }
+
+  function getProjects() {
+    return _.flatten(
+             _.map(database,
+                  ({projects}) =>
+                  _.map(projects, project => (project))));
+
   }
 }
