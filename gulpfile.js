@@ -54,7 +54,7 @@ gulp.task('transpile', ['jshint'],
   ])
   .on('error', function(e) { console.log(e); }));
 
-gulp.task('runtime', ['transpile'],
+gulp.task('runtime', ['transpile', 'images'],
   () => pipe([
     gulp.src([traceur.RUNTIME_PATH])
     ,p('runtime')
@@ -106,7 +106,7 @@ gulp.task('uglify', ['bundle'],
     ,gulp.dest(paths.package)
   ]));
 
-gulp.task('bundle', ['runtime'],
+gulp.task('bundle', ['runtime', 'images-package'],
   () => pipe([
     browserify({
       entries: [`./${paths.dist}/index.js`],
@@ -128,6 +128,20 @@ gulp.task('jshint',
     ,jshint.reporter('fail')
   ]));
 
+gulp.task('images',
+  () => pipe([
+    gulp.src(paths.images)
+    ,p('images')
+    ,gulp.dest(paths.dist + '/images')
+  ]));
+
+gulp.task('images-package',
+  () => pipe([
+    gulp.src(paths.dist + '/images/**/*')
+    ,p('images-package')
+    ,gulp.dest(paths.package + '/images')
+  ]));
+
 gulp.task('clean',
   () => pipe([
     gulp.src(paths.dist, {read: false})
@@ -136,6 +150,7 @@ gulp.task('clean',
 
 const paths = {
   scripts: ['src/**/*.js'],
+  images: ['images/**/*.{png,jpg,jpeg}'],
   dist: '.dist',
   package: '.package'
 };

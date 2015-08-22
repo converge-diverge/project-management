@@ -1,5 +1,7 @@
 import util from 'util';
 
+import fs from 'fs';
+
 import http from 'http';
 import https from 'https';
 
@@ -14,18 +16,26 @@ import _ from 'lodash';
 
 const analysis = {
   number: 1,
-  title: 'Patches are AMAZING!',
-  abstract: 'Patches of vegetation are so cool. But no one really studies them. Until now! We propose to analyze patches of vegetation in the best way possible. Please let us use your data to do it.',
-  emailSubject: 'updates on converge/diverge working group',
+  title: 'Assessing the relative strengths of meta-community drivers of ecosystem stability',
+  abstract: 'Stability is an important ecosystem attribute as it determines both the predictability of ecosystem functioning (e.g., primary productivity) as well as the potential for systems crossing catastrophic thresholds during years of extreme environmental conditions (e.g., the Dust Bowl of the 1930’s), the frequency of which are likely to increase with global change. Stability varies substantially across ecosystems and biomes and much of this variability can be attributed to differences in plant community structure. Local (α) diversity can impact stability through phenomena such as species and/or functional complementarity. Community turnover (β diversity) can control stability through asynchrony of patch-level responses in a single year. Recent theoretical work by Wang and Loreau (2014) uses the meta-community concept to identify a number of community-based mechanisms that may contribute to functional stability of the meta-community (Figure 1), and that are likely associated with various commonly measured diversity indices. However, integration of theory and empirical data is necessary to test these mechanisms and to determine the relative importance of various community attributes for ecosystem stability; to our knowledge, this has not been done previously. \n\nWe propose to use aboveground net primary productivity (ANPP) and species-level abundance data sets compiled by the Convergence-Divergence Project (CDP; 21 and 50 data sets, respectively) to address the following questions: (1) What are the relative contributions of α stability and β synchrony to ecosystem (γ) stability? (2) What are the relative contributions of species-level stability and species synchrony on α stability? (3) How predictive are α and β diversity measures for these mechanisms? To answer these questions, we will, using control data only, calculate the variables identified in Figure 1 as well as a number of common α and β diversity metrics (e.g., richness, H′) for each study. We will then use multiple regression techniques to assess relative contributions of these variables to ecosystem stability using both species-level and ANPP data sets. The CDP data set provides a unique opportunity to integrate theory with empirical data. This study will help direct future theoretical and empirical scientific studies, and will be important for informing land managers and policy makers in efforts to maintain sustainability of ecosystem function in the face of various global changes.',
+  emailSubject: 'new opt-in converge/diverge analysis',
+  variables: {
+    explanatory: 'community composition (control plots only)',
+    response: 'community composition and ANPP (control plots only)'
+  },
+  estimatedTimeline: 'analyses finalized by January, 2016; manuscript written by March, 2016; draft circulated to all co-authors by June, 2016',
   organizers: [{
     name: 'Kevin Wilcox',
-    email: 'kevin@kevin.com'
+    email: 'wilcoxkr@gmail.com'
   },{
     name: 'Sally Koerner',
-    email: 'sally@sally.com'
+    email: 'sally.koerner@duke.edu'
+  },{
+    name: 'Andrew Tredennick',
+    email: 'atredenn@gmail.com'
   },{
     name: 'Emily Grman',
-    email: 'emily@emily.com'
+    email: 'egrman@emich.edu'
   }]
 };
 
@@ -83,6 +93,11 @@ function start(config, database, data) {
                 'post': postUpdate
               }
             }
+          }
+        },
+        '/images/:imageID': {
+          methods: {
+            get: getImage
           }
         }
       }
@@ -153,14 +168,17 @@ function start(config, database, data) {
     for (let i = 0; i < emails.length; i++) {
       const emailRecord = emails[i],
             {person} = emailRecord,
-            {personID} = person;
+            {personID} = person,
+            {abstract, estimatedTimeline, title, variables} = analysis;
 
       emailRecord.emailText = yield this.renderView('consentEmail', {
         organizers: names.join(', '),
         organizersWithAnd: makeAndText(names),
         link: `http://${host}/consent/form/${personID}`,
-        title: analysis.title,
-        abstract: analysis.abstract
+        title,
+        abstract,
+        variables,
+        estimatedTimeline
       });
     }
 
@@ -256,6 +274,13 @@ function start(config, database, data) {
     if (!person) return;
 
     yield this.render('consentForm', {person, analysis});
+  }
+
+  function *getImage(imageID) {
+    const path = `${__dirname}/images/${imageID}`;
+
+    this.type = 'image';
+    this.body = fs.createReadStream(path);
   }
 
   function *postUpdate(analysisNumber, personID) {

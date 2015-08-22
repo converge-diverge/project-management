@@ -4,12 +4,36 @@
     <title>Data Consent Form</title>
 
     <style type="text/css">
+    .title {
+      font-size: 2em;
+      font-weight: bold;
+    }
+
     .analysis {
-      margin-top: 1em;
+      margin-top: 2em;
     }
 
     .analysis .field {
-      margin-bottom: 0.25em;
+      margin-bottom: 1em;
+    }
+
+    .analysis .field .figure {
+      float: right;
+    }
+
+    .analysis .field .figure img {
+      display: block;
+      background-color: #fff;
+    }
+
+    .analysis .field .figure .caption {
+      display: block;
+
+      font-style: italic;
+    }
+
+    .analysis .field .text {
+      white-space: pre-line;
     }
 
     .analysis .header {
@@ -34,7 +58,7 @@
     </style>
   </head>
   <body>
-    <h1>Convergence/Divergence of Plant Communities with Global Change Factors</h1>
+    <div class="title">Convergence/Divergence of Plant Communities with Global Change Factors</div>
 
     <div class="emails">
       <a href="mailto:lapierre.kimberly@gmail.com">Kimberly La Pierre</a>&nbsp;
@@ -49,11 +73,24 @@
         <a href="mailto:{{email}}">{{name}}</a>
         {{/each}}
       </div>
-      <div class="field"><span class="header">Abstract:</span> {{analysis.abstract}}</div>
+      <div class="field">
+        <span class="header">Abstract:</span>
+        <div class="figure">
+          <img src="/images/figure1.png">
+          <span class="caption">Figure 1.</span>
+        </div>
+        <span class="text">{{analysis.abstract}}</span>
+      </div>
+
+      <div class="field"><span class="header">Explanatory variables:</span> {{analysis.variables.explanatory}}</div>
+
+      <div class="field"><span class="header">Response variables:</span> {{analysis.variables.response}}</div>
+
+      <div class="field"><span class="header">Estimated timeline:</span> {{analysis.estimatedTimeline}}</div>
     </div>
 
     <div class="consent">
-      <div class="confirmation-text">I consent that my data can be included in the analysis for Opt-In Analysis #{{analysis.number}}, as described above.</div>
+      <div class="confirmation-text">I consent that my data can be used for Opt-In Analysis #{{analysis.number}}, as described above.</div>
 
       <form method="post" action="/consent/update/{{analysis.number}}/{{person.personID}}">
         <table>
