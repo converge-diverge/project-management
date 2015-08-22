@@ -25,17 +25,17 @@ const analysis = {
   },
   estimatedTimeline: 'analyses finalized by January, 2016; manuscript written by March, 2016; draft circulated to all co-authors by June, 2016',
   organizers: [{
-    name: 'Kevin Wilcox',
-    email: 'wilcoxkr@gmail.com'
+    name: 'Kevin',
+    email: 'kevin@kevin.com'
   },{
-    name: 'Sally Koerner',
-    email: 'sally.koerner@duke.edu'
+    name: 'Sally',
+    email: 'sally@sally.com'
   },{
-    name: 'Andrew Tredennick',
-    email: 'atredenn@gmail.com'
+    name: 'Andrew',
+    email: 'andrew@andrew.com'
   },{
-    name: 'Emily Grman',
-    email: 'egrman@emich.edu'
+    name: 'Emily',
+    email: 'emily@emily.com'
   }]
 };
 
